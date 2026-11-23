@@ -17,11 +17,6 @@ public class Main {
   );
 
   static void main() {
-    Map<String, JsonObject> products = RequestItems.getProducts();
-    ArrayList<Map<String, String>> ekmProductMaps = MapProducts.getProductMaps(products);
-
-    Path outputPath = Path.of("./products.csv");
-    CsvWriter.writeCsv(outputPath, ekmProductMaps);
-    System.out.println("Successfully wrote to " + outputPath);
+    ExportProducts.exportAllProducts(false);
   }
 }

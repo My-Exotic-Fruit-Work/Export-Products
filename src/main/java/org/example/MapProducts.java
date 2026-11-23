@@ -11,7 +11,7 @@ public class MapProducts {
           "https://webshop.one.com/api/v2/cluster/myexoticfruit.com/domain/myexoticfruit.com/product/%s/related-products";
 
   // not exactly my finest code, but i dont think theres any better way to do any of this
-  public static ArrayList<Map<String, String>> getProductMaps(Map<String, JsonObject> products) {
+  public static ArrayList<Map<String, String>> getProductMaps(Map<String, JsonObject> products, boolean getRelated) {
     ArrayList<Map<String, String>> productMaps = new ArrayList<>();
 
     for (JsonObject product : products.values()) {
@@ -30,6 +30,9 @@ public class MapProducts {
               .min(Comparator.comparingDouble(variant -> variant.get("price").getAsDouble()))
               // even products with no variants set are sent with a single variant, W EKM
               .orElseThrow();
+      long totalStock = variants.stream()
+              .filter(variant -> variant.get("unlimited").getAsString().equals("true"))
+              .count();
 
       List<JsonObject> additionalInfo = product.get("additionalInfo").getAsJsonArray().asList()
               .stream().map(JsonElement::getAsJsonObject).toList();
@@ -37,7 +40,7 @@ public class MapProducts {
       Map<String, String> productMap = new LinkedHashMap<>();
       productMap.put("Action", "Add Product");
 
-      String name = product.get("name").getAsString();
+      String name = getName(product);
       System.out.println(name + " is being scraped!");
 
       productMap.put("Name", name);
@@ -62,29 +65,38 @@ public class MapProducts {
       productMap.put("MetaKeywords", keywords);
 
       productMap.put("Price", cheapestVariant.getAsJsonObject().get("price").getAsString());
+      productMap.put("Stock", String.valueOf(totalStock));
 
-      JsonObject relatedProductsResponse = NetworkUtil.requestURL(
-              String.format(RELATED_PRODUCTS_API_BASE, product.get("id").getAsString()),
-              Map.of("autoSuggest", "true"),
-              Main.ONE_COM_HEADERS
-      );
-      List<JsonElement> relatedProductIds =
-              relatedProductsResponse.get("data").getAsJsonObject().get("result").getAsJsonArray().asList();
+      if (getRelated) {
+        JsonObject relatedProductsResponse =
+            NetworkUtil.requestURL(
+                String.format(RELATED_PRODUCTS_API_BASE, product.get("id").getAsString()),
+                Map.of("autoSuggest", "true"),
+                Main.ONE_COM_HEADERS);
+        List<JsonElement> relatedProductIds =
+            relatedProductsResponse
+                .get("data")
+                .getAsJsonObject()
+                .get("result")
+                .getAsJsonArray()
+                .asList();
 
-      String relatedProducts = relatedProductIds.stream()
-              .map(idObject -> {
-                String id = idObject.getAsJsonObject().get("relatedProductId").getAsString();
-                JsonObject relatedProductObject = products.get(id);
+        String relatedProducts =
+            relatedProductIds.stream()
+                .map(idObject -> {
+                  String id = idObject.getAsJsonObject().get("relatedProductId").getAsString();
+                  JsonObject relatedProductObject = products.get(id);
 
-                return relatedProductObject == null
-                        ? null
-                        : relatedProductObject.get("name").getAsString();
-              })
-              // one.com goes rogue and suggests id's which arent real
-              .filter(Objects::nonNull)
-              .collect(Collectors.joining(","));
+                  return relatedProductObject == null
+                      ? null
+                      : relatedProductObject.get("name").getAsString();
+                })
+                // one.com goes rogue and suggests id's which arent real
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining(","));
 
-      productMap.put("Related Products", relatedProducts);
+        productMap.put("Related Products", relatedProducts);
+      }
 
       String aka = getTab("Also Known As", additionalInfo);
       productMap.put("Tab Content:Also Known As", aka);
@@ -104,8 +116,11 @@ public class MapProducts {
       String averageWeight = getTab("Average Weight", additionalInfo);
       productMap.put("Tab Content:Average Weight", averageWeight);
 
-      String furtherInfo = getTab("Further Info", additionalInfo);
+      String furtherInfo = getTab("Further Information", additionalInfo);
       productMap.put("Tab Content:Further Info", furtherInfo);
+
+      String seasonality = getTab("Seasonality", additionalInfo);
+      productMap.put("Tab Content:Seasonality", seasonality);
 
       productMaps.add(productMap);
 
@@ -169,7 +184,7 @@ public class MapProducts {
 
       variantMap.put("Action", "Add Product Variant");
 
-      variantMap.put("Name", product.get("name").getAsString());
+      variantMap.put("Name", getName(product));
       variantMap.put("CategoryPath", category);
 
       variantMap.put("Price", variant.get("price").getAsString());
@@ -185,7 +200,15 @@ public class MapProducts {
       // "A true or false answer either shown as true|false or yes|no or 1|0. EKM typically uses yes or no."
       variantMap.put("VariantDefault", variant.equals(cheapestVariant) ? "Yes" : "No");
 
+      // yoda'd the .equals, but it doesnt matter because getAsString will null pointer anyway
+      variantMap.put("Stock", "true".equals(variant.get("unlimited").getAsString()) ? "1" : "0");
+
       productMaps.add(variantMap);
     }
+  }
+
+  private static String getName(JsonObject product) {
+    return product.get("name").getAsString()
+            .replaceAll("[—–]", "-");
   }
 }
