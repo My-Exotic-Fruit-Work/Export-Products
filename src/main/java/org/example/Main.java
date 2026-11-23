@@ -16,7 +16,7 @@ public class Main {
           "User-Agent", "Mozilla/5.0"
   );
 
-  static void main() {
+  public static void main(String[] args) {
     ExportProducts.exportAllProducts(false);
   }
 }
