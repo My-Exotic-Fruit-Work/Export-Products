@@ -1,7 +1,8 @@
-package org.example;
+package scales.dev.exportproducts;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import scales.dev.Main;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -23,7 +24,7 @@ public class RequestItems {
   public static Map<String, JsonObject> getProducts() {
     HashMap<String, JsonObject> items = new LinkedHashMap<>();
 
-    int totalItems = NetworkUtil.requestURL(API, Map.of(), Main.ONE_COM_HEADERS)
+    int totalItems = NetworkUtil.requestURL(API, Map.of(), ExportProducts.ONE_COM_HEADERS)
             .getAsJsonObject("data")
             .get("totalCount").getAsInt();
 
@@ -31,7 +32,7 @@ public class RequestItems {
     for(int i = 0; i < totalItems;) {
       params.put("pageOffset", String.valueOf(i));
 
-      for (JsonElement product : NetworkUtil.requestURL(API, params, Main.ONE_COM_HEADERS)
+      for (JsonElement product : NetworkUtil.requestURL(API, params, ExportProducts.ONE_COM_HEADERS)
               .getAsJsonObject("data")
               .getAsJsonArray("result")) {
         i++;

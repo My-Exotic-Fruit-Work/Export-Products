@@ -1,7 +1,8 @@
-package org.example;
+package scales.dev.exportproducts;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import scales.dev.Main;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -72,7 +73,7 @@ public class MapProducts {
             NetworkUtil.requestURL(
                 String.format(RELATED_PRODUCTS_API_BASE, product.get("id").getAsString()),
                 Map.of("autoSuggest", "true"),
-                Main.ONE_COM_HEADERS);
+                    ExportProducts.ONE_COM_HEADERS);
         List<JsonElement> relatedProductIds =
             relatedProductsResponse
                 .get("data")
