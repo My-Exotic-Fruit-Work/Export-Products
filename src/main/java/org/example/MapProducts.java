@@ -16,7 +16,7 @@ public class MapProducts {
 
     for (JsonObject product : products.values()) {
       List<JsonElement> categories = product.get("categories").getAsJsonArray().asList();
-      String mainCategory = getCategoryPath(categories.isEmpty() ? null : categories.getFirst());
+      String mainCategory = getCategoryPath(categories.isEmpty() ? null : categories.get(0));
       String extraCategories =  categories.stream()
               .skip(1)
               .map(MapProducts::getCategoryPath)
