@@ -201,6 +201,10 @@ public class MapProducts {
       // "A true or false answer either shown as true|false or yes|no or 1|0. EKM typically uses yes or no."
       variantMap.put("VariantDefault", variant.equals(cheapestVariant) ? "Yes" : "No");
 
+      String weight = variant.get("weight").getAsString();
+      variantMap.put("Weight", weight);
+
+
       // yoda'd the .equals, but it doesnt matter because getAsString will null pointer anyway
       variantMap.put("Stock", "true".equals(variant.get("unlimited").getAsString()) ? "1" : "0");
 
